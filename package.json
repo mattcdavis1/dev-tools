@@ -5,6 +5,10 @@
   "main": "src/index.js",
   "author": "Matt Davis",
   "license": "MIT",
+  "repository": {
+    "type" : "git",
+    "url" : "https://bitbucket.org/unionco/union-cli.git"
+  },
   "dependencies": {
     "@adonisjs/ace": "^5.0.1"
   }
