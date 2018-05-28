@@ -8,4 +8,4 @@ Run `node index` with no options for a list of commands and arguments.
 
 ## License
 
-Laravel Mix is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
+UNION CLI is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
