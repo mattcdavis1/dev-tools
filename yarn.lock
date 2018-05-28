@@ -243,6 +243,10 @@ arr-swap@^1.0.1:
   dependencies:
     is-number "^3.0.0"
 
+asn1@~0.2.0:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/asn1/-/asn1-0.2.3.tgz#dac8787713c9966849fc8180777ebe9c1ddf3b86"
+
 assign-symbols@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/assign-symbols/-/assign-symbols-1.0.0.tgz#59667f41fadd4f20ccbc2bb96b8d4f7f78ec0367"
@@ -343,6 +347,10 @@ define-property@^1.0.0:
   resolved "https://registry.yarnpkg.com/define-property/-/define-property-1.0.0.tgz#769ebaaf3f4a63aad3af9e8d304c9bbe79bfb0e6"
   dependencies:
     is-descriptor "^1.0.0"
+
+dotenv@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-5.0.1.tgz#a5317459bd3d79ab88cff6e44057a6a3fbb1fcef"
 
 enquirer@^1.0.3:
   version "1.0.3"
@@ -818,6 +826,10 @@ readline-utils@^2.2.1, readline-utils@^2.2.3:
     strip-color "^0.1.0"
     window-size "^1.1.0"
 
+semver@^5.1.0:
+  version "5.5.0"
+  resolved "https://registry.yarnpkg.com/semver/-/semver-5.5.0.tgz#dc4bbc7a6ca9d916dee5d43516f0092b58f7b8ab"
+
 set-getter@^0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/set-getter/-/set-getter-0.1.0.tgz#d769c182c9d5a51f409145f2fba82e5e86e80376"
@@ -865,12 +877,30 @@ split-string@^3.0.1:
   dependencies:
     extend-shallow "^3.0.0"
 
+ssh2-streams@~0.2.0:
+  version "0.2.1"
+  resolved "https://registry.yarnpkg.com/ssh2-streams/-/ssh2-streams-0.2.1.tgz#9c9c9964be60e9644575af328677f64b1e5cbd79"
+  dependencies:
+    asn1 "~0.2.0"
+    semver "^5.1.0"
+    streamsearch "~0.1.2"
+
+ssh2@^0.6.1:
+  version "0.6.1"
+  resolved "https://registry.yarnpkg.com/ssh2/-/ssh2-0.6.1.tgz#5dde1a7394bb978b1f9c2f014affee2f5493bd40"
+  dependencies:
+    ssh2-streams "~0.2.0"
+
 static-extend@^0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/static-extend/-/static-extend-0.1.2.tgz#60809c39cbff55337226fd5e0b520f341f1fb5c6"
   dependencies:
     define-property "^0.2.5"
     object-copy "^0.1.0"
+
+streamsearch@~0.1.2:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/streamsearch/-/streamsearch-0.1.2.tgz#808b9d0e56fc273d809ba57338e929919a1a9f1a"
 
 string-width@^2.0.0:
   version "2.1.1"
