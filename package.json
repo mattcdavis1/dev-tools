@@ -1,6 +1,6 @@
 {
   "name": "@union/cli",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Local Development Tools",
   "main": "src/index.js",
   "author": "Matt Davis",
