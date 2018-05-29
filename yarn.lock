@@ -21,6 +21,14 @@
     prompt-list "^3.1.2"
     prompt-password "^1.2.0"
 
+"@union/cli@^0.9.2":
+  version "0.9.2"
+  resolved "https://registry.yarnpkg.com/@union/cli/-/cli-0.9.2.tgz#37365d220c637c6d798eeeec2a586dace575c6ad"
+  dependencies:
+    "@adonisjs/ace" "^5.0.1"
+    dotenv "^5.0.1"
+    ssh2 "^0.6.1"
+
 ansi-bgblack@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/ansi-bgblack/-/ansi-bgblack-0.1.1.tgz#a68ba5007887701b6aafbe3fa0dadfdfa8ee3ca2"
@@ -312,7 +320,7 @@ colors@1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/colors/-/colors-1.0.3.tgz#0433f44d809680fdeb60ed260f1b0c262e82a40b"
 
-commander@^2.14.1:
+commander@^2.14.1, commander@^2.15.1:
   version "2.15.1"
   resolved "https://registry.yarnpkg.com/commander/-/commander-2.15.1.tgz#df46e867d0fc2aec66a34662b406a9ccafff5b0f"
 

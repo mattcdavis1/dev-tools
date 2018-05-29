@@ -1,13 +1,15 @@
-const ace = require('@adonisjs/ace');
+#! /usr/bin/env node
+const program = require("commander");
+const syncDb = require('./commands/syncDb');
 
-ace.addCommand(require('./commands/SyncDb'));
-ace.onError(function (error, commandName) {
-    console.log(`${commandName} reported ${error.message}`)
-    process.exit(1)
-});
+program
+    .version(1.1)
+    .command('syncdb [remote]')
+    .option('-l, --local-engine <engine>', 'type of local environment. defaults to "docker"')
+    .option('-s, --save', 'save database dump on local and remote environments')
+    .description('sync local database with a remote server')
+    .action(syncDb);
 
-// Boot ace to execute commands
-ace.wireUpWithCommander();
-ace.invoke();
+program.parse(process.argv);
 
-process.exit();
+if (!program.args.length) program.help();

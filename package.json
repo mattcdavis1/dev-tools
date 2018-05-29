@@ -1,6 +1,6 @@
 {
   "name": "@union/cli",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Local Development Tools",
   "main": "src/index.js",
   "author": "Matt Davis",
@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@adonisjs/ace": "^5.0.1",
+    "@union/cli": "^0.9.2",
+    "commander": "^2.15.1",
     "dotenv": "^5.0.1",
     "ssh2": "^0.6.1"
   }
