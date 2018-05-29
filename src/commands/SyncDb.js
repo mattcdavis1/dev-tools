@@ -1,10 +1,11 @@
-const dotenv = require('dotenv');
 const { Command } = require('@adonisjs/ace');
+const { existsSync, readFileSync } = require('fs');
 const { promisify } = require('util');
-const { createWriteStream, existsSync, readFileSync } = require('fs');
-const { Client } = require('ssh2');
-const { execSync } = require('child_process');
+const chalk = require('chalk');
+const dotenv = require('dotenv');
+const JsSsh = require('../drivers/syncdb/js');
 const path = require('path');
+const SystemSsh = require('../drivers/syncdb/system');
 
 const streamToBuffer = (stream) =>
     new Promise((resolve, reject) => {
@@ -29,8 +30,10 @@ class SyncDb extends Command {
             syncdb
             { remote: name of remote server }
             { --save: save database dump on local and remote environments }
+            { --pathBase=@value: path to project root }
             { --pathDotEnv=@value: path to dot env file }
             { --localEngine=@value: which local engine to use }
+            { --sshDriver=@value: use 'system' or 'js' driver (defaults to 'system') }
         `;
     }
 
@@ -41,17 +44,37 @@ class SyncDb extends Command {
     async handle (args, options) {
         const { remote } = args;
         const { save } = options;
-        let { localEngine, pathDotEnv } = options;
+        let { localEngine, pathBase, pathDotEnv, sshDriverOption } = options;
 
         localEngine = localEngine||ENGINE_SYSTEM;
+        sshDriverOption = sshDriverOption||'system';
+        pathBase = pathBase||process.cwd();
+        pathDotEnv = pathDotEnv||path.join(pathBase, './.env');
 
-        if (pathDotEnv === null) {
-            try {
-                pathDotEnv = readFileSync(path.join(process.cwd(), './.env'));
-            } catch (e) {
-                console.log(e);
-            }
+        if (!['system', 'js'].includes(sshDriverOption)) {
+            console.log(chalk.red("SSH Driver must be one of 'system' or 'js'"));
+            process.exit();
         }
+
+        const sshDriverMap = {
+            system: SystemSsh,
+            js: JsSsh,
+        };
+        // SystemSsh.debug();
+        const sshDriver = sshDriverMap[sshDriverOption];
+
+        if (!existsSync(pathDotEnv)) {
+            console.log(chalk.red('Dotenv path does not exits'));
+            process.exit();
+        }
+
+        let configEnv = {};
+
+        try {
+            configEnv = dotenv.parse(readFileSync(pathDotEnv))
+        } catch (e) {
+            console.log(e);
+        };
 
         const {
             DB_SERVER,
@@ -59,109 +82,40 @@ class SyncDb extends Command {
             DB_PORT,
             DB_PASSWORD,
             DB_DATABASE,
-            CONFIG_PATH = './config/remotes.js'
-        } = dotenv.parse(readFileSync(pathDotEnv));
+            PATH_REMOTES = './config/remotes.json'
+        } = configEnv;
 
-        const configPath = path.join(process.cwd(), CONFIG_PATH);
+        const pathConfigRemote = path.join(pathBase, PATH_REMOTES);
 
-        // if (!existsSync(configPath)) {
-        //     console.error('No servers configured');
-        //     return;
-        // }
+        if (!existsSync(pathConfigRemote)) {
+            console.error('No servers configured', pathConfigRemote);
+            process.exit();
+        }
 
-        // const config = JSON.parse(path.join(process.cwd(), CONFIG_PATH));
-        // const remote = config[remoteName];
+        let configRemotes = {};
 
-        // if (!remote) {
-        //     console.error('Chosen server does not exist');
-        //     return;
-        // }
+        try {
+            configRemotes = JSON.parse(readFileSync(pathConfigRemote));
+        } catch (e) {
+            console.log(e);
+        }
 
-        // const remoteStoragePath = (file = '') => `${remote.pathBackupDirectory}/${file}`;
+        const configRemote = configRemotes[remote];
 
-        // console.log('Beginning remote dump...');
+        if (!remote) {
+            console.log(chalk.red('Chosen server does not exist'));
+            return;
+        }
 
-        // const conn = new Client();
-        // conn.on('ready', async () => {
-        //     console.log('Remote connection ready');
+        configRemote.storagePath = (file = '') => `${configRemote.pathBackupDirectory}/${file}`;
+        try {
+            sshDriver.execute(configRemote);
+        } catch (e) {
+            console.log(e);
+        }
 
-        //     const remoteExec = promisify(conn.exec.bind(conn));
-
-        //     const sftp = await new Promise((resolve, reject) =>
-        //         conn.sftp((err, sftp) => err ? reject(err) : resolve(sftp))
-        //     );
-
-        //     // scoping remote db connection
-        //     {
-        //         const envBuffer = await streamToBuffer(sftp.createReadStream(`${remote.root}/.env`));
-        //         const {
-        //             DB_SERVER,
-        //             DB_USER,
-        //             DB_PASSWORD,
-        //             DB_DATABASE,
-        //             DB_PORT
-        //         } = dotenv.parse(envBuffer);
-
-        //         await remoteExec(`mysqldump -h ${DB_SERVER} -u ${DB_USER} -p"${DB_PASSWORD}" -P ${DB_PORT} ${DB_DATABASE} > ${remoteStoragePath(SQL_DUMP_FILE_NAME)}`)
-        //             .then(streamToBuffer);
-
-        //     }
-
-        //     await remoteExec(`zip -j ${remoteStoragePath(SQL_DUMP_FILE_NAME_ZIP)} ${remoteStoragePath(SQL_DUMP_FILE_NAME)}`)
-        //         .then(streamToBuffer);
-
-        //     console.log('Remote dump completed');
-        //     console.log('Downloading remote file...');
-
-        //     await new Promise((resolve) =>
-        //         sftp.createReadStream(remoteStoragePath(SQL_DUMP_FILE_NAME_ZIP))
-        //             .on('close', resolve)
-        //             .pipe(createWriteStream(localStoragePath(SQL_DUMP_FILE_NAME_ZIP)))
-        //     );
-
-        //     console.log('Remote download completed');
-
-        //     // delete remote files
-        //     await new Promise((resolve) => sftp.unlink(remoteStoragePath(SQL_DUMP_FILE_NAME_ZIP), resolve));
-
-        //     if (!save) {
-        //         await new Promise((resolve) => sftp.unlink(remoteStoragePath(SQL_DUMP_FILE_NAME), resolve));
-        //     }
-
-        //     console.log('Remote file deleted');
-
-        //     // close tunnel
-        //     conn.end();
-
-        //     execSync(`unzip -o ${localStoragePath(SQL_DUMP_FILE_NAME_ZIP)} -d ${localStoragePath()}`);
-
-        //     const dbConnection = `mysql -u ${DB_USER} --password="${DB_PASSWORD}" ${DB_DATABASE}`;
-
-        //     let importDatabaseCommand;
-
-        //     switch (localEngine) {
-        //         case ENGINE_DOCKER:
-        //             importDatabaseCommand = `docker-compose exec -T ${DB_SERVER} bash -c "${dbConnection} < ${dockerStorage(SQL_DUMP_FILE_NAME)}"`;
-        //             break;
-        //         default:
-        //             importDatabaseCommand = `${dbConnection} -P ${DB_PORT} < ${localStoragePath(SQL_DUMP_FILE_NAME)}`;
-        //             return;
-        //     }
-
-        //     execSync(importDatabaseCommand);
-
-        //     console.log('Local dump complete');
-
-        //     // delete sql files
-        //     execSync(`rm ${localStoragePath(SQL_DUMP_FILE_NAME_ZIP)}`);
-
-        //     if (!save) {
-        //         execSync(`rm ${localStoragePath(SQL_DUMP_FILE_NAME)}`);
-        //     }
-
-        //     console.log('Local files deleted');
-        // }).connect(remote);
+        console.log(chalk.green('complete'));
     }
 }
 
-module.exports = SyncDb
+module.exports = SyncDb;
