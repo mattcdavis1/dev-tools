@@ -1,4 +1,3 @@
-const { Command } = require('@adonisjs/ace');
 const { existsSync, readFileSync } = require('fs');
 const { promisify } = require('util');
 const chalk = require('chalk');
@@ -19,92 +18,89 @@ const streamToBuffer = (stream) =>
 const ENGINE_DOCKER = 'docker';
 const ENGINE_SYSTEM = 'system';
 
+const SSH_DRIVER_SYSTEM = 'system';
+const SSH_DRIVER_JS = 'js';
+
 const SQL_DUMP_FILE_NAME = 'database_dump.sql';
 const SQL_DUMP_FILE_NAME_ZIP = 'database_dump.sql.zip';
 
 const localStoragePath = (file = '') => `./storage/${file}`;
 
-module.exports = function syncDb(args, options) {
-    console.log(test);
-    console.log('error above');
-    // init arguments / options
-    // const { remote } = args;
-    // const { save } = options;
-    // let { localEngine, pathBase, pathDotEnv, sshDriverOption } = options;
+module.exports = function syncDb(remoteName = 'default', {
+    localEngine = ENGINE_SYSTEM,
+    save = false,
+    sshDriverOption = SSH_DRIVER_SYSTEM,
+    pathBase = process.cwd(),
+    pathDotEnv = path.join(process.cwd(), './.env'),
+}) {
+    // init env vars
+    if (!existsSync(pathDotEnv)) {
+        console.log(chalk.red('Dotenv path does not exist', pathDotEnv));
+        process.exit();
+    }
 
-    // localEngine = localEngine||ENGINE_SYSTEM;
-    // sshDriverOption = sshDriverOption||'system';
-    // pathBase = pathBase||process.cwd();
-    // pathDotEnv = pathDotEnv||path.join(pathBase, './.env');
+    let configEnv = {};
 
-    // // init env vars
-    // if (!existsSync(pathDotEnv)) {
-    //     console.log(chalk.red('Dotenv path does not exits'));
-    //     process.exit();
-    // }
+    try {
+        configEnv = dotenv.parse(readFileSync(pathDotEnv))
+    } catch (e) {
+        console.log(e);
+    };
 
-    // let configEnv = {};
+    const {
+        DB_SERVER,
+        DB_USER,
+        DB_PORT,
+        DB_PASSWORD,
+        DB_DATABASE,
+        PATH_REMOTES = './config/remotes.json'
+    } = configEnv;
 
-    // try {
-    //     configEnv = dotenv.parse(readFileSync(pathDotEnv))
-    // } catch (e) {
-    //     console.log(e);
-    // };
+    const pathConfigRemote = path.join(pathBase, PATH_REMOTES);
 
-    // const {
-    //     DB_SERVER,
-    //     DB_USER,
-    //     DB_PORT,
-    //     DB_PASSWORD,
-    //     DB_DATABASE,
-    //     PATH_REMOTES = './config/remotes.json'
-    // } = configEnv;
+    // init remote config
+    if (!existsSync(pathConfigRemote)) {
+        console.error('No servers configured', pathConfigRemote);
+        process.exit();
+    }
 
-    // const pathConfigRemote = path.join(pathBase, PATH_REMOTES);
+    let configRemotes = {};
 
-    // // init remote config
-    // if (!existsSync(pathConfigRemote)) {
-    //     console.error('No servers configured', pathConfigRemote);
-    //     process.exit();
-    // }
+    try {
+        configRemotes = JSON.parse(readFileSync(pathConfigRemote));
+    } catch (e) {
+        console.log(e);
+    }
 
-    // let configRemotes = {};
+    const configRemote = configRemotes[remoteName];
 
-    // try {
-    //     configRemotes = JSON.parse(readFileSync(pathConfigRemote));
-    // } catch (e) {
-    //     console.log(e);
-    // }
+    if (!configRemote) {
+        console.log(chalk.red('Chosen server does not exist'));
+        return;
+    }
 
-    // const configRemote = configRemotes[remote];
+    // init ssh driver
+    if (!['system', 'js'].includes(sshDriverOption)) {
+        console.log(chalk.red("SSH Driver must be one of 'system' or 'js'"));
+        process.exit();
+    }
 
-    // if (!remote) {
-    //     console.log(chalk.red('Chosen server does not exist'));
-    //     return;
-    // }
+    const sshDriverMap = {
+        system: SystemSsh,
+        js: JsSsh,
+    };
 
-    // // init ssh driver
-    // if (!['system', 'js'].includes(sshDriverOption)) {
-    //     console.log(chalk.red("SSH Driver must be one of 'system' or 'js'"));
-    //     process.exit();
-    // }
+    const sshDriver = sshDriverMap[sshDriverOption];
 
-    // const sshDriverMap = {
-    //     system: SystemSsh,
-    //     js: JsSsh,
-    // };
+    // add functions to remote config
+    configRemote.storagePath = (file = '') => `${configRemote.pathBackupDirectory}/${file}`;
 
-    // const sshDriver = sshDriverMap[sshDriverOption];
+    // run driver
+    try {
+        sshDriver.execute(configRemote);
+    } catch (e) {
+        console.log(e);
+    }
 
-    // // add functions to remote config
-    // configRemote.storagePath = (file = '') => `${configRemote.pathBackupDirectory}/${file}`;
-
-    // // run driver
-    // try {
-    //     sshDriver.execute(configRemote);
-    // } catch (e) {
-    //     console.log(e);
-    // }
-
-    // console.log(chalk.green('complete'));
+    console.log(chalk.green('complete'));
 };
