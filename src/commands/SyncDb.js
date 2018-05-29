@@ -42,6 +42,7 @@ class SyncDb extends Command {
     }
 
     async handle (args, options) {
+        // init arguments / options
         const { remote } = args;
         const { save } = options;
         let { localEngine, pathBase, pathDotEnv, sshDriverOption } = options;
@@ -51,18 +52,7 @@ class SyncDb extends Command {
         pathBase = pathBase||process.cwd();
         pathDotEnv = pathDotEnv||path.join(pathBase, './.env');
 
-        if (!['system', 'js'].includes(sshDriverOption)) {
-            console.log(chalk.red("SSH Driver must be one of 'system' or 'js'"));
-            process.exit();
-        }
-
-        const sshDriverMap = {
-            system: SystemSsh,
-            js: JsSsh,
-        };
-        // SystemSsh.debug();
-        const sshDriver = sshDriverMap[sshDriverOption];
-
+        // init env vars
         if (!existsSync(pathDotEnv)) {
             console.log(chalk.red('Dotenv path does not exits'));
             process.exit();
@@ -87,6 +77,7 @@ class SyncDb extends Command {
 
         const pathConfigRemote = path.join(pathBase, PATH_REMOTES);
 
+        // init remote config
         if (!existsSync(pathConfigRemote)) {
             console.error('No servers configured', pathConfigRemote);
             process.exit();
@@ -107,7 +98,23 @@ class SyncDb extends Command {
             return;
         }
 
+        // init ssh driver
+        if (!['system', 'js'].includes(sshDriverOption)) {
+            console.log(chalk.red("SSH Driver must be one of 'system' or 'js'"));
+            process.exit();
+        }
+
+        const sshDriverMap = {
+            system: SystemSsh,
+            js: JsSsh,
+        };
+
+        const sshDriver = sshDriverMap[sshDriverOption];
+
+        // add functions to remote config
         configRemote.storagePath = (file = '') => `${configRemote.pathBackupDirectory}/${file}`;
+
+        // run driver
         try {
             sshDriver.execute(configRemote);
         } catch (e) {
