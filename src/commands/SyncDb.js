@@ -2,61 +2,38 @@ const { existsSync, readFileSync } = require('fs');
 const { promisify } = require('util');
 const chalk = require('chalk');
 const dotenv = require('dotenv');
-const JsSsh = require('../drivers/syncdb/js');
 const path = require('path');
-const SystemSsh = require('../drivers/syncdb/system');
+const drivers = {
+    system: {
+        name: '',
+        driver: require('../drivers/syncdb/system'),
+    },
+    js: {
+        name: '',
+        driver: require('../drivers/syncdb/js'),
+    },
+};
 
-const streamToBuffer = (stream) =>
-    new Promise((resolve, reject) => {
-        const bufs = [];
-        stream
-            .on('close', () => resolve(Buffer.concat(bufs)))
-            .on('error', reject)
-            .on('data', d => bufs.push(d));
+createLocalConfig = (env, opts) => {
+    const { save, pathBase } = opts;
+
+    // create config from dotenv with defaults
+    return Object.assign({
+        save,
+        pathBase,
+        dbServer: env.DB_SERVER,
+        dbUser: env.DB_USER,
+        dbPort: env.DB_PORT,
+        dbPassword: env.DB_PASSWORD,
+        dbDatabase: env.DB_DATABASE,
     });
+}
 
-const ENGINE_DOCKER = 'docker';
-const ENGINE_SYSTEM = 'system';
+createRemoteConfig = (env, opts) => {
+    const { pathBase, remoteName } = opts;
+    const { PATH_REMOTES_CONFIG = './config/remotes.json' } = env;
 
-const SSH_DRIVER_SYSTEM = 'system';
-const SSH_DRIVER_JS = 'js';
-
-const SQL_DUMP_FILE_NAME = 'database_dump.sql';
-const SQL_DUMP_FILE_NAME_ZIP = 'database_dump.sql.zip';
-
-const localStoragePath = (file = '') => `./storage/${file}`;
-
-module.exports = function syncDb(remoteName = 'default', {
-    localEngine = ENGINE_SYSTEM,
-    save = false,
-    sshDriverOption = SSH_DRIVER_SYSTEM,
-    pathBase = process.cwd(),
-    pathDotEnv = path.join(process.cwd(), './.env'),
-}) {
-    // init env vars
-    if (!existsSync(pathDotEnv)) {
-        console.log(chalk.red('Dotenv path does not exist', pathDotEnv));
-        process.exit();
-    }
-
-    let configEnv = {};
-
-    try {
-        configEnv = dotenv.parse(readFileSync(pathDotEnv))
-    } catch (e) {
-        console.log(e);
-    };
-
-    const {
-        DB_SERVER,
-        DB_USER,
-        DB_PORT,
-        DB_PASSWORD,
-        DB_DATABASE,
-        PATH_REMOTES = './config/remotes.json'
-    } = configEnv;
-
-    const pathConfigRemote = path.join(pathBase, PATH_REMOTES);
+    const pathConfigRemote = path.join(pathBase, PATH_REMOTES_CONFIG);
 
     // init remote config
     if (!existsSync(pathConfigRemote)) {
@@ -64,13 +41,7 @@ module.exports = function syncDb(remoteName = 'default', {
         process.exit();
     }
 
-    let configRemotes = {};
-
-    try {
-        configRemotes = JSON.parse(readFileSync(pathConfigRemote));
-    } catch (e) {
-        console.log(e);
-    }
+    configRemotes = JSON.parse(readFileSync(pathConfigRemote));
 
     const configRemote = configRemotes[remoteName];
 
@@ -79,25 +50,36 @@ module.exports = function syncDb(remoteName = 'default', {
         return;
     }
 
-    // init ssh driver
-    if (!['system', 'js'].includes(sshDriverOption)) {
-        console.log(chalk.red("SSH Driver must be one of 'system' or 'js'"));
-        process.exit();
-    }
-
-    const sshDriverMap = {
-        system: SystemSsh,
-        js: JsSsh,
-    };
-
-    const sshDriver = sshDriverMap[sshDriverOption];
-
     // add functions to remote config
     configRemote.storagePath = (file = '') => `${configRemote.pathBackupDirectory}/${file}`;
 
+    return configRemote;
+}
+
+module.exports = function syncDb(remoteName = 'default', {
+    save = false,
+    sshDriverOption = 'system',
+    pathBase = process.cwd(),
+}) {
+    const opts = { save, pathBase, remoteName };
+
+    // create env object
+    const pathDotEnv = path.join(pathBase, './.env');
+
+    if (!existsSync(pathDotEnv)) {
+        console.log(chalk.red('Dotenv path does not exist', pathDotEnv));
+        process.exit();
+    }
+
+    const env = dotenv.parse(readFileSync(pathDotEnv));
+
+    // create config objects for local and remote
+    configLocal = createLocalConfig(env, opts);
+    configRemote = createRemoteConfig(env, opts);
+
     // run driver
     try {
-        sshDriver.execute(configRemote);
+        drivers[sshDriverOption].driver.execute(configLocal, configRemote);
     } catch (e) {
         console.log(e);
     }

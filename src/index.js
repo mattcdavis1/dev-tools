@@ -6,10 +6,9 @@ const syncDb = require('./commands/SyncDb');
 program
     .version(pkg.version)
     .command('syncdb [remote]')
-    .option('-l, --local-engine <engine>', 'type of local environment. defaults to "docker"')
-    .option('-s, --save', 'save database dump on local and remote environments')
-    .option('--path-base <pathBase>', 'path to project root')
-    .option('--path-dot-env <pathDotEnv>', 'path to dotenv file')
+    .option('-s, --save', 'whether save database dump locally. defaults to "false"')
+    .option('-d, --driver <driver>', 'ssh driver. defaults to "system"')
+    .option('--path-base <pathBase>', 'path to project root. defaults to current working directory')
     .description('sync local database with a remote server')
     .action(syncDb);
 
