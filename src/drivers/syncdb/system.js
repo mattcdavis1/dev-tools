@@ -47,13 +47,13 @@ class SystemSsh {
         const remoteSqlDumpPath = path.join(remote.pathBackupDirectory, SQL_DUMP_FILE_NAME);
         const remoteSqlDumpZipPath = path.join(remote.pathBackupDirectory, SQL_DUMP_FILE_NAME_ZIP);
 
-        const dumpSqlCommand = `${MYSQL_DUMP_PATH} -h ${DB_SERVER} -u ${DB_USER} -p"${DB_PASSWORD}" -P ${DB_PORT} ${DB_DATABASE} > ${remoteSqlDumpPath}`;
-        const zipSqlCommand = `zip -j ${remoteSqlDumpZipPath} ${remoteSqlDumpPath}`;
-        const rmSqlCommand = `rm ${remoteSqlDumpPath}; rm ${remoteSqlDumpZipPath}`;
+        const dumpRemoteSqlCommand = `${MYSQL_DUMP_PATH} -h ${DB_SERVER} -u ${DB_USER} -p"${DB_PASSWORD}" -P ${DB_PORT} ${DB_DATABASE} > ${remoteSqlDumpPath}`;
+        const zipRemoteSqlCommand = `zip -j ${remoteSqlDumpZipPath} ${remoteSqlDumpPath}`;
+        const deleteRemoteSqlCommand = `rm ${remoteSqlDumpPath};`;
 
         console.log(chalk.yellow('Beginning Remote Dump...'));
 
-        this.execRemote(`${dumpSqlCommand}; ${zipSqlCommand}; ${rmSqlCommand}`);
+        this.execRemote(`${dumpRemoteSqlCommand}; ${zipRemoteSqlCommand}; ${deleteRemoteSqlCommand}`);
 
         console.log(chalk.green('Remote Dump Complete'));
 
@@ -74,11 +74,22 @@ class SystemSsh {
 
         console.log(chalk.green('SQL Zip File Download Complete'));
 
-        const unzipZipCommand = `unzip ${localSqlDumpZipPath} -do ${backupDirectoryPath}`;
-        const importMysqlCommand = `mysql -u ${local.dbUser} -h ${local.dbServer} -P ${local.dbPort} --password="${local.dbPassword}" ${local.dbDatabase} < ${localSqlDumpPath}`;
-        const deleteLocalFilesCommand = `rm ${localSqlDumpPath}; rm ${localSqlDumpZipPath}`;
+        // unzip and import sql dump
+        const unzipZipCommand = `unzip -o ${localSqlDumpZipPath} -d ${backupDirectoryPath}`;
+        const deleteLocalZipCommand = `rm ${localSqlDumpZipPath}`;
 
-        this.execLocal(`${unzipZipCommand}; ${importMysqlCommand}; ${deleteLocalFilesCommand}`);
+        this.execLocal(`${unzipZipCommand};`);
+        this.execLocal(`${deleteLocalZipCommand}`);
+
+        console.log(chalk.green('SQL Zip File Unzipped and Deleted'));
+
+        const importMysqlCommand = `mysql -u ${local.dbUser} -h ${local.dbServer} -P ${local.dbPort} --password="${local.dbPassword}" ${local.dbDatabase} < ${localSqlDumpPath}`;
+        const deleteLocalSqlCommand = `rm ${localSqlDumpPath};`;
+
+        this.execLocal(`${importMysqlCommand}; ${deleteLocalSqlCommand}`);
+
+        // delete remote zip file
+        this.execRemote(`rm ${remoteSqlDumpZipPath};`);
 
         console.log(chalk.green('SyncDB Complete'));
     }
