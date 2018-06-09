@@ -8,7 +8,7 @@ program
     .command('syncdb [remote]')
     .option('-s, --save', 'whether save database dump locally. defaults to "false"')
     .option('-d, --driver <driver>', 'ssh driver. defaults to "system"')
-    .option('--path-base <pathBase>', 'path to project root. defaults to current working directory')
+    .option('--project-path <projectPath>', 'path to project root. defaults to current working directory')
     .description('sync local database with a remote server')
     .action(syncDb);
 

@@ -15,12 +15,12 @@ const drivers = {
 };
 
 createLocalConfig = (env, opts) => {
-    const { save, pathBase } = opts;
+    const { save, projectPath } = opts;
 
     // create config from dotenv with defaults
     return Object.assign({
         save,
-        pathBase,
+        projectPath,
         dbServer: env.DB_SERVER,
         dbUser: env.DB_USER,
         dbPort: env.DB_PORT,
@@ -30,10 +30,9 @@ createLocalConfig = (env, opts) => {
 }
 
 createRemoteConfig = (env, opts) => {
-    const { pathBase, remoteName } = opts;
+    const { projectPath, remoteName } = opts;
     const { PATH_REMOTES_CONFIG = './config/remotes.json' } = env;
-
-    const pathConfigRemote = path.join(pathBase, PATH_REMOTES_CONFIG);
+    const pathConfigRemote = path.join(projectPath, PATH_REMOTES_CONFIG);
 
     // init remote config
     if (!existsSync(pathConfigRemote)) {
@@ -46,7 +45,7 @@ createRemoteConfig = (env, opts) => {
     const configRemote = configRemotes[remoteName];
 
     if (!configRemote) {
-        console.log(chalk.red('Chosen server does not exist'));
+        console.log(chalk.red('Chosen server does not exist'), configRemotes);
         return;
     }
 
@@ -56,15 +55,15 @@ createRemoteConfig = (env, opts) => {
     return configRemote;
 }
 
-module.exports = function syncDb(remoteName = 'default', {
+module.exports = function syncDb(remoteName = 'prod', {
     save = false,
     sshDriverOption = 'system',
-    pathBase = process.cwd(),
+    projectPath = process.cwd(),
 }) {
-    const opts = { save, pathBase, remoteName };
+    const opts = { save, projectPath, remoteName };
 
     // create env object
-    const pathDotEnv = path.join(pathBase, './.env');
+    const pathDotEnv = path.join(projectPath, './.env');
 
     if (!existsSync(pathDotEnv)) {
         console.log(chalk.red('Dotenv path does not exist', pathDotEnv));
@@ -79,7 +78,8 @@ module.exports = function syncDb(remoteName = 'default', {
 
     // run driver
     try {
-        drivers[sshDriverOption].driver.execute(configLocal, configRemote);
+        const driver = new drivers[sshDriverOption].driver(configLocal, configRemote);
+        driver.execute();
     } catch (e) {
         console.log(e);
     }
