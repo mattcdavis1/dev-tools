@@ -47,7 +47,7 @@ class SystemSsh {
         const remoteSqlDumpPath = path.join(remote.pathBackupDirectory, SQL_DUMP_FILE_NAME);
         const remoteSqlDumpZipPath = path.join(remote.pathBackupDirectory, SQL_DUMP_FILE_NAME_ZIP);
 
-        const dumpRemoteSqlCommand = `${MYSQL_DUMP_PATH} -h ${DB_SERVER} -u ${DB_USER}@${DB_SERVER} -p"${DB_PASSWORD}" -P ${DB_PORT} ${DB_DATABASE} > ${remoteSqlDumpPath}`;
+        const dumpRemoteSqlCommand = `${MYSQL_DUMP_PATH} -h ${DB_SERVER} -u ${DB_USER} --password='${DB_PASSWORD}' -P ${DB_PORT} ${DB_DATABASE} > ${remoteSqlDumpPath}`;
         const zipRemoteSqlCommand = `zip -j ${remoteSqlDumpZipPath} ${remoteSqlDumpPath}`;
         const deleteRemoteSqlCommand = `rm ${remoteSqlDumpPath};`;
 
@@ -112,7 +112,7 @@ class SystemSsh {
     execRemote(command, { stdio = 'inherit' } = {}) {
         const host = this.remote.username ? `${this.remote.username}@${this.remote.host}` : this.remote.host;
 
-        const sshCommand = spawnSync(`ssh ${host} -p ${this.remote.port} '${command}'`, {
+        const sshCommand = spawnSync(`ssh ${host} -p ${this.remote.port} <<'EOF' \n ${command}\nEOF`, {
             shell: true,
             stdio,
         });
