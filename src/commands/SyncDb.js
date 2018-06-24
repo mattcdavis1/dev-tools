@@ -26,6 +26,7 @@ createLocalConfig = (env, opts) => {
         dbPort: env.DB_PORT,
         dbPassword: env.DB_PASSWORD,
         dbDatabase: env.DB_DATABASE,
+        backupPath: env.BACKUP_PATH,
     });
 }
 

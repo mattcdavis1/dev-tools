@@ -8,7 +8,6 @@ const path = require('path');
 // vars
 const SQL_DUMP_FILE_NAME = 'database_dump.sql';
 const SQL_DUMP_FILE_NAME_ZIP = 'database_dump.sql.zip';
-const LOCAL_BACKUP_DIRECTORY = 'backups/databases/';
 
 // functions
 const localStoragePath = (file = '') => `./storage/${file}`;
@@ -60,7 +59,7 @@ class SystemSsh {
         // download remote sql dump zip file
         console.log(chalk.yellow('Downloading Remote SQL Dump...'));
 
-        const backupDirectoryPath = path.join(this.local.projectPath, LOCAL_BACKUP_DIRECTORY);
+        const backupDirectoryPath = this.local.backupPath ? this.local.backupPath : path.join(this.local.projectPath, 'storage/backups/databases/');
 
         if (!existsSync(backupDirectoryPath)) {
             this.execLocal(`mkdir -p ${backupDirectoryPath}`);
