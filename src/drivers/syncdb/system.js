@@ -38,15 +38,20 @@ class SystemSsh {
             DB_PASSWORD,
             DB_PORT,
             DB_SERVER,
+            DB_HOST,
             DB_USER,
+            DB_USERNAME,
             MYSQL_DUMP_PATH = '/usr/bin/mysqldump',
         } = dotenv.parse(stdout.toString('utf8'));
+
+        const USERNAME = DB_USER ? DB_USER : DB_USERNAME;
+        const HOST = DB_SERVER ? DB_SERVER : DB_HOST;
 
         // execute remote mysqldump
         const remoteSqlDumpPath = path.join(remote.pathBackupDirectory, SQL_DUMP_FILE_NAME);
         const remoteSqlDumpZipPath = path.join(remote.pathBackupDirectory, SQL_DUMP_FILE_NAME_ZIP);
 
-        const dumpRemoteSqlCommand = `${MYSQL_DUMP_PATH} -h ${DB_SERVER} -u ${DB_USER} --password='${DB_PASSWORD}' -P ${DB_PORT} ${DB_DATABASE} > ${remoteSqlDumpPath}`;
+        const dumpRemoteSqlCommand = `${MYSQL_DUMP_PATH} -h ${HOST} -u ${USERNAME} --password='${DB_PASSWORD}' -P ${DB_PORT} ${DB_DATABASE} > ${remoteSqlDumpPath}`;
         const zipRemoteSqlCommand = `zip -j ${remoteSqlDumpZipPath} ${remoteSqlDumpPath}`;
         const deleteRemoteSqlCommand = `rm ${remoteSqlDumpPath};`;
 

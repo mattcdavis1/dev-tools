@@ -17,12 +17,15 @@ const drivers = {
 createLocalConfig = (env, opts) => {
     const { save, projectPath } = opts;
 
+    const HOST = env.DB_SERVER ? env.DB_SERVER : env.DB_HOST;
+    const USERNAME = env.DB_USER ? env.DB_USER : env.DB_USERNAME;
+
     // create config from dotenv with defaults
     return Object.assign({
         save,
         projectPath,
-        dbServer: env.DB_SERVER,
-        dbUser: env.DB_USER,
+        dbServer: HOST,
+        dbUser: USERNAME,
         dbPort: env.DB_PORT,
         dbPassword: env.DB_PASSWORD,
         dbDatabase: env.DB_DATABASE,
