@@ -35,7 +35,9 @@ class SystemSsh {
         const { stdout } = this.execRemote(`cat ${remote.pathDotEnv}`, { stdio: 'pipe' });
         const {
             DB_DATABASE,
+            DB_NAME,
             DB_PASSWORD,
+            DB_PASS,
             DB_PORT,
             DB_SERVER,
             DB_HOST,
@@ -44,14 +46,21 @@ class SystemSsh {
             MYSQL_DUMP_PATH = '/usr/bin/mysqldump',
         } = dotenv.parse(stdout.toString('utf8'));
 
+        const DATABASE = DB_DATABASE ? DB_DATABASE : DB_NAME;
+        const PASSWORD = DB_PASSWORD ? DB_PASSWORD : DB_PASS;
         const USERNAME = DB_USER ? DB_USER : DB_USERNAME;
         const HOST = DB_SERVER ? DB_SERVER : DB_HOST;
 
         // execute remote mysqldump
         const remoteSqlDumpPath = path.join(remote.pathBackupDirectory, SQL_DUMP_FILE_NAME);
         const remoteSqlDumpZipPath = path.join(remote.pathBackupDirectory, SQL_DUMP_FILE_NAME_ZIP);
-
-        const dumpRemoteSqlCommand = `${MYSQL_DUMP_PATH} -h ${HOST} -u ${USERNAME} --password='${DB_PASSWORD}' -P ${DB_PORT} ${DB_DATABASE} > ${remoteSqlDumpPath}`;
+        let ignoreTables = new String();
+        if (Array.isArray(remote.ignoreTables)) {
+          remote.ignoreTables.forEach((table) => {
+            ignoreTables = ignoreTables.concat(` --ignore-table=${table} `)
+          })
+        }
+        const dumpRemoteSqlCommand = `${MYSQL_DUMP_PATH} -h ${HOST} -u ${USERNAME} --password='${PASSWORD}' ${ignoreTables} -P ${DB_PORT} ${DATABASE} > ${remoteSqlDumpPath}`;
         const zipRemoteSqlCommand = `zip -j ${remoteSqlDumpZipPath} ${remoteSqlDumpPath}`;
         const deleteRemoteSqlCommand = `rm ${remoteSqlDumpPath};`;
 
