@@ -19,6 +19,8 @@ createLocalConfig = (env, opts) => {
 
     const HOST = env.DB_SERVER ? env.DB_SERVER : env.DB_HOST;
     const USERNAME = env.DB_USER ? env.DB_USER : env.DB_USERNAME;
+    const DATABASE = env.DB_DATABASE ? env.DB_DATABASE : env.DB_NAME;
+    const PASSWORD = env.DB_PASSWORD ? env.DB_PASSWORD : env.DB_PASS;
 
     // create config from dotenv with defaults
     return Object.assign({
@@ -27,8 +29,8 @@ createLocalConfig = (env, opts) => {
         dbServer: HOST,
         dbUser: USERNAME,
         dbPort: env.DB_PORT,
-        dbPassword: env.DB_PASSWORD,
-        dbDatabase: env.DB_DATABASE,
+        dbPassword: PASSWORD,
+        dbDatabase: DATABASE,
         backupPath: env.BACKUP_PATH,
     });
 }
