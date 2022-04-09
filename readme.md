@@ -1,6 +1,6 @@
 ## Introduction
 
-UNION CLI provides an array of command line tools useful for local development.
+Datacode Dev Tools
 
 ## Documentation
 
@@ -8,4 +8,4 @@ Run `node index` with no options for a list of commands and arguments.
 
 ## License
 
-UNION CLI is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
+Datacode Dev Tools is open-sourced software licensed under the [MIT license](http://opensource.org/licenses/MIT).
