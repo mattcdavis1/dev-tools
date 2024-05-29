@@ -54,6 +54,7 @@ const {
         DB_HOST,
         DB_USER,
         DB_USERNAME,
+        IS_MARIA_SANDBOX,
         MYSQL_DUMP_PATH = '/usr/bin/mysqldump',
       } = dotenv.parse(stdout.toString('utf8'));
 
@@ -80,6 +81,8 @@ const {
       }
 
       const dumpRemoteSqlCommand = `${MYSQL_DUMP_PATH} -h ${HOST} -u ${USERNAME} --password='${PASSWORD}' ${ignoreTables} ${options} -P ${DB_PORT} ${DATABASE} > ${remoteSqlDumpPath}`;
+      // console.log(dumpRemoteSqlCommand);
+      // process.exit();
       const zipRemoteSqlCommand = `zip -j ${remoteSqlDumpZipPath} ${remoteSqlDumpPath}`;
       const deleteRemoteSqlCommand = `rm ${remoteSqlDumpPath};`;
 
@@ -114,6 +117,11 @@ const {
       this.execLocal(`${deleteLocalZipCommand}`);
 
       console.log(chalk.green('SQL Zip File Unzipped and Deleted'));
+
+      if (IS_MARIA_SANDBOX === 'true') {
+        // remove the first line for newer MariaDB dump
+        this.execLocal(`sed -i '' '1d' ${localSqlDumpPath}`);
+      }
 
       const importMysqlCommand = `mysql -u ${local.dbUser} -h ${local.dbServer} -P ${local.dbPort} --password="${local.dbPassword}" ${local.dbDatabase} < ${localSqlDumpPath}`;
       const deleteLocalSqlCommand = `rm ${localSqlDumpPath};`;
